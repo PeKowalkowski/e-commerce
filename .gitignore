@@ -13,7 +13,7 @@ target/
 .springBeans
 .sts4-cache
 
-### IntelliJ IDEA ###
+### IntelliJ IDEA ###git commit -m "
 .idea
 *.iws
 *.iml
