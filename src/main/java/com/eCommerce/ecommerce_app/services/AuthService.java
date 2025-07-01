@@ -28,7 +28,7 @@ public class AuthService {
     public User registerUser(RegistrationRequestDto dto) {
         try {
             if (userRepository.existsByEmail(dto.getEmail())) {
-                log.error("Registration failed: user with email " + dto.getEmail() + " already exists.");
+                log.error("Registration failed: user with email {} already exists.", dto.getEmail());
                 throw new UserAlreadyExistException("A user with this email already exists");
             }
 
@@ -47,14 +47,14 @@ public class AuthService {
 
             User savedUser = userRepository.save(newUser);
 
-            log.info("Registered user: {} " + savedUser.getEmail());
+            log.info("Registered user: {}", savedUser.getEmail());
 
             return savedUser;
 
         } catch (UserAlreadyExistException ex) {
             throw ex;
         } catch (Exception ex) {
-            log.error("Error while registering user: {} "+  ex.getMessage());
+            log.error("Error while registering user", ex);
             throw new RuntimeException("An error occurred during registration.");
         }
     }
