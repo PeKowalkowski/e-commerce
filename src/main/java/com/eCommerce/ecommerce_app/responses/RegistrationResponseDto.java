@@ -4,22 +4,35 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-public class RegistrationResponseDto {
+import java.util.List;
 
-    public RegistrationResponseDto(Long id, String username, String email, String message) {
+@Data
+public class RegistrationResponseDto {
+    public RegistrationResponseDto() {
+    }
+
+    public RegistrationResponseDto(Long id, String username, String email, String message, List<String> errors) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.message = message;
+        this.errors = errors;
     }
 
     private Long id;
     private String username;
     private String email;
     private String message;
+    private List<String> errors;
 
+
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
+    }
 
     public Long getId() {
         return id;
