@@ -31,6 +31,17 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
+    @ExceptionHandler(ProductAlreadyExistsException.class)
+    public ResponseEntity<ProblemDetail> handleProductAlreadyExists(ProductAlreadyExistsException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblemDetail(
+                HttpStatus.CONFLICT,
+                "Product Already Exists",
+                "product-already-exists",
+                ex.getMessage(),
+                request
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGenericException(Exception ex, HttpServletRequest request) {

@@ -1,7 +1,9 @@
 package com.eCommerce.ecommerce_app.controllers;
 
 import com.eCommerce.ecommerce_app.entities.User;
+import com.eCommerce.ecommerce_app.requests.LoginRequestDto;
 import com.eCommerce.ecommerce_app.requests.RegistrationRequestDto;
+import com.eCommerce.ecommerce_app.responses.LoginResponseDto;
 import com.eCommerce.ecommerce_app.responses.RegistrationResponseDto;
 import com.eCommerce.ecommerce_app.services.AuthService;
 import jakarta.validation.Valid;
@@ -10,10 +12,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -53,5 +52,20 @@ public class AuthController {
         response.setMessage("Registration successful");
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto dto) {
+        LoginResponseDto response = authService.login(dto);
+        if (response.getToken() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
+        authService.logout(token);
+        return ResponseEntity.ok("Logged out successfully");
     }
 }

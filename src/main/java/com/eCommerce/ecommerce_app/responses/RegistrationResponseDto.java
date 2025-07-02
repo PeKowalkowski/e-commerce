@@ -1,8 +1,6 @@
 package com.eCommerce.ecommerce_app.responses;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
