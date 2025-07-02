@@ -54,6 +54,7 @@ public class OrderController {
         PlaceOrderResponseDto response = orderService.placeOrder(user, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
     @GetMapping("/get/{orderId}")
     public ResponseEntity<OrderDetailsResponseDto> getOrderDetails(@RequestHeader("Authorization") String token,
                                                                    @PathVariable Long orderId) {
