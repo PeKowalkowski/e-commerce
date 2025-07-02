@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 public class ProductService {
 
@@ -19,6 +21,9 @@ public class ProductService {
     }
 
     public Product addProduct(ProductRequestDto dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("ProductRequestDto cannot be null");
+        }
         try {
             if (productRepository.existsByName(dto.getName())) {
                 log.warn("Product with name '{}' already exists.", dto.getName());
@@ -29,6 +34,10 @@ public class ProductService {
             product.setName(dto.getName());
             product.setPrice(dto.getPrice());
             product.setVat(dto.getVat());
+
+            BigDecimal vatFraction = product.getVat().divide(BigDecimal.valueOf(100));
+            BigDecimal priceGross = product.getPrice().add(product.getPrice().multiply(vatFraction));
+            product.setPriceGorss(priceGross);
 
             Product saved = productRepository.save(product);
             log.info("Product added: {}", saved.getName());

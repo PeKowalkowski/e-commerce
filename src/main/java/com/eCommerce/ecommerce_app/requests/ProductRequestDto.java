@@ -20,6 +20,8 @@ public class ProductRequestDto {
     @NotNull(message = "VAT is required")
     private BigDecimal vat;
 
+    private BigDecimal priceGross;
+
     public String getName() {
         return name;
     }

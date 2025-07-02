@@ -3,7 +3,9 @@ package com.eCommerce.ecommerce_app.services;
 import com.eCommerce.ecommerce_app.entities.User;
 import com.eCommerce.ecommerce_app.enums.Role;
 import com.eCommerce.ecommerce_app.exceptions.UserAlreadyExistException;
+import com.eCommerce.ecommerce_app.requests.LoginRequestDto;
 import com.eCommerce.ecommerce_app.requests.RegistrationRequestDto;
+import com.eCommerce.ecommerce_app.responses.LoginResponseDto;
 import com.eCommerce.ecommerce_app.respositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +16,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 
@@ -32,6 +36,8 @@ class AuthServiceTest {
     private AuthService authService;
 
     private RegistrationRequestDto validDto;
+    private LoginRequestDto loginDto;
+    private User existingUser;
 
     @BeforeEach
     void setUp() {
@@ -46,8 +52,19 @@ class AuthServiceTest {
         validDto.setCity("Warsaw");
         validDto.setStreet("Main Street");
         validDto.setPostalCode("00-001");
+
+
+        loginDto = new LoginRequestDto();
+        loginDto.setUsername("testuser");
+        loginDto.setPassword("correctPassword");
+
+        existingUser = new User();
+        existingUser.setUsername("testuser");
+        existingUser.setPassword("encodedPassword");
+        existingUser.getRoles().add(Role.USER);
     }
 
+    //Registration
     @Test
     void registerUser_ShouldRegisterSuccessfully_WhenEmailNotExists() {
         // given
@@ -117,6 +134,7 @@ class AuthServiceTest {
         assertEquals(1, registeredUser.getRoles().size());
         assertTrue(registeredUser.getRoles().contains(Role.USER));
     }
+
     @Test
     void registerUser_ShouldWork_WhenOptionalFieldsAreNull() {
         validDto.setStreet(null);
@@ -132,6 +150,7 @@ class AuthServiceTest {
         assertNull(registeredUser.getStreet());
         assertEquals(validDto.getEmail(), registeredUser.getEmail());
     }
+
     @Test
     void registerUser_ShouldEncodePassword_BeforeSavingToDatabase() {
         // given
@@ -141,9 +160,6 @@ class AuthServiceTest {
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         when(userRepository.save(userCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // when
-        User registeredUser = authService.registerUser(validDto);
-
         // then
         User savedUser = userCaptor.getValue();
         assertNotNull(savedUser);
@@ -152,4 +168,56 @@ class AuthServiceTest {
         assertEquals("encodedPassword123", savedUser.getPassword(),
                 "The encrypted password should be set to the user");
     }
+
+    //Login
+    @Test
+    void login_ShouldReturnTokenAndSuccessMessage_WhenCredentialsAreCorrect() {
+        when(userRepository.findByUsername(loginDto.getUsername()))
+                .thenReturn(Optional.of(existingUser));
+        when(passwordEncoder.matches(loginDto.getPassword(), existingUser.getPassword()))
+                .thenReturn(true);
+
+        LoginResponseDto response = authService.login(loginDto);
+
+        assertNotNull(response);
+        assertNotNull(response.getToken(), "Token should not be null");
+        assertEquals("Login successful", response.getMessage());
+
+        verify(userRepository).findByUsername(loginDto.getUsername());
+        verify(passwordEncoder).matches(loginDto.getPassword(), existingUser.getPassword());
+    }
+
+    @Test
+    void login_ShouldReturnNullTokenAndErrorMessage_WhenUserDoesNotExist() {
+        when(userRepository.findByUsername(loginDto.getUsername()))
+                .thenReturn(Optional.empty());
+
+        LoginResponseDto response = authService.login(loginDto);
+
+        assertNotNull(response);
+        assertNull(response.getToken(), "Token should be null");
+        assertEquals("Invalid username or password", response.getMessage());
+
+        verify(userRepository).findByUsername(loginDto.getUsername());
+        verify(passwordEncoder, never()).matches(any(), any());
+    }
+
+    @Test
+    void login_ShouldReturnNullTokenAndErrorMessage_WhenPasswordIsIncorrect() {
+        when(userRepository.findByUsername(loginDto.getUsername()))
+                .thenReturn(Optional.of(existingUser));
+        when(passwordEncoder.matches(loginDto.getPassword(), existingUser.getPassword()))
+                .thenReturn(false);
+
+        LoginResponseDto response = authService.login(loginDto);
+
+        assertNotNull(response);
+        assertNull(response.getToken(), "Token should be null");
+        assertEquals("Invalid username or password", response.getMessage());
+
+        verify(userRepository).findByUsername(loginDto.getUsername());
+        verify(passwordEncoder).matches(loginDto.getPassword(), existingUser.getPassword());
+    }
+
+
 }

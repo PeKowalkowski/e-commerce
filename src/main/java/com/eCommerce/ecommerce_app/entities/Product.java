@@ -23,6 +23,8 @@ public class Product {
 
     private BigDecimal vat;
 
+    private BigDecimal priceGorss;
+
     public Long getId() {
         return id;
     }
@@ -54,6 +56,16 @@ public class Product {
     public void setVat(BigDecimal vat) {
         this.vat = vat;
     }
+
+    public BigDecimal getPriceGorss() {
+        return priceGorss;
+    }
+
+    public void setPriceGorss(BigDecimal priceGorss) {
+        this.priceGorss = priceGorss;
+    }
+
+
 }
 
 
