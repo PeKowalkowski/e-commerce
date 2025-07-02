@@ -25,6 +25,8 @@ public class Product {
 
     private BigDecimal priceGorss;
 
+    private Integer quantity;
+
     public Long getId() {
         return id;
     }
@@ -65,7 +67,13 @@ public class Product {
         this.priceGorss = priceGorss;
     }
 
+    public Integer getQuantity() {
+        return quantity;
+    }
 
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 }
 
 

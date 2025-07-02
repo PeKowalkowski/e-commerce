@@ -14,6 +14,7 @@ public class ProductResponseDto {
     private String name;
     private BigDecimal price;
     private BigDecimal vat;
+    private Integer quantity;
     private String message;
 
     public Long getId() {
@@ -54,5 +55,13 @@ public class ProductResponseDto {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 }

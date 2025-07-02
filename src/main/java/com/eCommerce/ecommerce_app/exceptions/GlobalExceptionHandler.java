@@ -42,6 +42,28 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleProductNotFound(ProductNotFoundException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblemDetail(
+                HttpStatus.NOT_FOUND,
+                "Product Not Found",
+                "product-not-found",
+                ex.getMessage(),
+                request
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ProblemDetail> handleInsufficientStock(InsufficientStockException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblemDetail(
+                HttpStatus.BAD_REQUEST,
+                "Insufficient Stock",
+                "insufficient-stock",
+                ex.getMessage(),
+                request
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGenericException(Exception ex, HttpServletRequest request) {
