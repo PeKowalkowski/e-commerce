@@ -64,6 +64,17 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
     }
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleOrderNotFound(OrderNotFoundException ex, HttpServletRequest request) {
+        ProblemDetail problem = createProblemDetail(
+                HttpStatus.NOT_FOUND,
+                "Order Not Found",
+                "order-not-found",
+                ex.getMessage(),
+                request
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleGenericException(Exception ex, HttpServletRequest request) {

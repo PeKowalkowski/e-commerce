@@ -3,8 +3,10 @@ package com.eCommerce.ecommerce_app.controllers;
 
 import com.eCommerce.ecommerce_app.entities.User;
 import com.eCommerce.ecommerce_app.enums.Role;
+import com.eCommerce.ecommerce_app.exceptions.OrderNotFoundException;
 import com.eCommerce.ecommerce_app.requests.OrderItemRequestDto;
 import com.eCommerce.ecommerce_app.requests.PlaceOrderRequestDto;
+import com.eCommerce.ecommerce_app.responses.OrderDetailsResponseDto;
 import com.eCommerce.ecommerce_app.responses.PlaceOrderResponseDto;
 import com.eCommerce.ecommerce_app.services.AuthService;
 import com.eCommerce.ecommerce_app.services.OrderService;
@@ -61,7 +63,7 @@ class OrderControllerTest {
         user.setUsername("testuser");
         user.setRoles(Set.of(Role.USER));
     }
-
+    //Place order
     @Test
     void placeOrder_ShouldReturnCreated_WhenValidOrderAndValidTokenAndNoValidationErrors() {
         when(bindingResult.hasErrors()).thenReturn(false);
@@ -157,5 +159,120 @@ class OrderControllerTest {
         verify(bindingResult).getAllErrors();
         verifyNoInteractions(authService);
         verifyNoInteractions(orderService);
+    }
+    //Get order
+    @Test
+    void getOrderDetails_ShouldReturnOk_WhenUserIsOwner() {
+        Long orderId = 1L;
+
+        User user = new User();
+        user.setId(10L);
+        user.setRoles(Set.of(Role.USER));
+
+        OrderDetailsResponseDto.CustomerInfoDto customer = new OrderDetailsResponseDto.CustomerInfoDto();
+        customer.setId(user.getId());
+
+        OrderDetailsResponseDto orderDetails = new OrderDetailsResponseDto();
+        orderDetails.setCustomer(customer);
+
+        when(authService.getUserByToken("valid-token")).thenReturn(user);
+        when(orderService.getOrderDetails(orderId)).thenReturn(orderDetails);
+
+        ResponseEntity<OrderDetailsResponseDto> response = orderController.getOrderDetails("valid-token", orderId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(orderDetails, response.getBody());
+
+        verify(authService).getUserByToken("valid-token");
+        verify(orderService).getOrderDetails(orderId);
+    }
+
+    @Test
+    void getOrderDetails_ShouldReturnOk_WhenUserIsAdmin() {
+        Long orderId = 2L;
+
+        User adminUser = new User();
+        adminUser.setId(99L);
+        adminUser.setRoles(Set.of(Role.ADMIN));
+
+        OrderDetailsResponseDto.CustomerInfoDto customer = new OrderDetailsResponseDto.CustomerInfoDto();
+        customer.setId(10L);
+
+        OrderDetailsResponseDto orderDetails = new OrderDetailsResponseDto();
+        orderDetails.setCustomer(customer);
+
+        when(authService.getUserByToken("admin-token")).thenReturn(adminUser);
+        when(orderService.getOrderDetails(orderId)).thenReturn(orderDetails);
+
+        ResponseEntity<OrderDetailsResponseDto> response = orderController.getOrderDetails("admin-token", orderId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(orderDetails, response.getBody());
+
+        verify(authService).getUserByToken("admin-token");
+        verify(orderService).getOrderDetails(orderId);
+    }
+
+    @Test
+    void getOrderDetails_ShouldReturnUnauthorized_WhenUserNotFoundByToken() {
+        Long orderId = 3L;
+
+        when(authService.getUserByToken("invalid-token")).thenReturn(null);
+
+        ResponseEntity<OrderDetailsResponseDto> response = orderController.getOrderDetails("invalid-token", orderId);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().getMessage().contains("Unauthorized"));
+
+        verify(authService).getUserByToken("invalid-token");
+        verifyNoInteractions(orderService);
+    }
+
+    @Test
+    void getOrderDetails_ShouldReturnForbidden_WhenUserIsNotOwnerAndNotAdmin() {
+        Long orderId = 4L;
+
+        User user = new User();
+        user.setId(10L);
+        user.setRoles(Set.of(Role.USER));
+
+        OrderDetailsResponseDto.CustomerInfoDto customer = new OrderDetailsResponseDto.CustomerInfoDto();
+        customer.setId(99L);
+
+        OrderDetailsResponseDto orderDetails = new OrderDetailsResponseDto();
+        orderDetails.setCustomer(customer);
+
+        when(authService.getUserByToken("valid-token")).thenReturn(user);
+        when(orderService.getOrderDetails(orderId)).thenReturn(orderDetails);
+
+        ResponseEntity<OrderDetailsResponseDto> response = orderController.getOrderDetails("valid-token", orderId);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().getMessage().contains("Access denied"));
+
+        verify(authService).getUserByToken("valid-token");
+        verify(orderService).getOrderDetails(orderId);
+    }
+
+    @Test
+    void getOrderDetails_ShouldThrowException_WhenOrderNotFound() {
+        Long orderId = 5L;
+
+        User user = new User();
+        user.setId(10L);
+        user.setRoles(Set.of(Role.USER));
+
+        when(authService.getUserByToken("valid-token")).thenReturn(user);
+        when(orderService.getOrderDetails(orderId)).thenThrow(new OrderNotFoundException("Order with id " + orderId + " not found"));
+
+        OrderNotFoundException ex = assertThrows(OrderNotFoundException.class, () ->
+                orderController.getOrderDetails("valid-token", orderId));
+
+        assertEquals("Order with id 5 not found", ex.getMessage());
+
+        verify(authService).getUserByToken("valid-token");
+        verify(orderService).getOrderDetails(orderId);
     }
 }

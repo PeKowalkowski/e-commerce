@@ -5,9 +5,11 @@ import com.eCommerce.ecommerce_app.entities.OrderItem;
 import com.eCommerce.ecommerce_app.entities.Product;
 import com.eCommerce.ecommerce_app.entities.User;
 import com.eCommerce.ecommerce_app.exceptions.InsufficientStockException;
+import com.eCommerce.ecommerce_app.exceptions.OrderNotFoundException;
 import com.eCommerce.ecommerce_app.exceptions.ProductNotFoundException;
 import com.eCommerce.ecommerce_app.requests.OrderItemRequestDto;
 import com.eCommerce.ecommerce_app.requests.PlaceOrderRequestDto;
+import com.eCommerce.ecommerce_app.responses.OrderDetailsResponseDto;
 import com.eCommerce.ecommerce_app.responses.PlaceOrderResponseDto;
 import com.eCommerce.ecommerce_app.respositories.OrderRepository;
 import com.eCommerce.ecommerce_app.respositories.ProductRepository;
@@ -20,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -95,6 +98,62 @@ public class OrderService {
         } catch (Exception ex) {
             log.error("Error while placing order", ex);
             throw new RuntimeException("An unexpected error occurred while placing the order.");
+        }
+    }
+
+    public OrderDetailsResponseDto getOrderDetails(Long orderId) {
+        try {
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new OrderNotFoundException("Order with id " + orderId + " not found"));
+
+            OrderDetailsResponseDto dto = new OrderDetailsResponseDto();
+
+            dto.setOrderId(order.getId());
+
+            OrderDetailsResponseDto.CustomerInfoDto customer = new OrderDetailsResponseDto.CustomerInfoDto();
+            User user = order.getUser();
+
+            customer.setId(user.getId());
+            customer.setUsername(user.getUsername());
+            customer.setEmail(user.getEmail());
+            customer.setFirstName(user.getFirstName());
+            customer.setLastName(user.getLastName());
+            customer.setPhoneNumber(user.getPhoneNumber());
+            customer.setCountry(user.getCountry());
+            customer.setCity(user.getCity());
+            customer.setStreet(user.getStreet());
+            customer.setPostalCode(user.getPostalCode());
+
+            dto.setCustomer(customer);
+
+            List<OrderDetailsResponseDto.OrderItemInfoDto> items = order.getOrderItems()
+                    .stream()
+                    .map(item -> {
+                        OrderDetailsResponseDto.OrderItemInfoDto itemDto = new OrderDetailsResponseDto.OrderItemInfoDto();
+                        itemDto.setProductId(item.getProduct().getId());
+                        itemDto.setProductName(item.getProduct().getName());
+                        itemDto.setQuantity(item.getQuantity());
+                        itemDto.setNetPrice(item.getNetPrice());
+                        itemDto.setGrossPrice(item.getGrossPrice());
+                        return itemDto;
+                    })
+                    .collect(Collectors.toList());
+
+            dto.setItems(items);
+
+            dto.setTotalNet(order.getTotalNetValue());
+            dto.setTotalGross(order.getTotalGrossValue());
+
+            log.info("Fetched details for order id {}", orderId);
+
+            return dto;
+
+        } catch (OrderNotFoundException ex) {
+            log.warn("Order not found: {}", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Error while fetching order details for id {}", orderId, ex);
+            throw new RuntimeException("An error occurred while fetching order details.");
         }
     }
 }
