@@ -1,27 +1,20 @@
-package com.eCommerce.ecommerce_app.entities;
+package com.eCommerce.ecommerce_app.responses;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "products")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductResponseDto {
+
+    public ProductResponseDto() {
+    }
+
     private Long id;
-
     private String name;
-
     private BigDecimal price;
-
     private BigDecimal vat;
+    private String message;
 
     public Long getId() {
         return id;
@@ -54,6 +47,12 @@ public class Product {
     public void setVat(BigDecimal vat) {
         this.vat = vat;
     }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }
-
-

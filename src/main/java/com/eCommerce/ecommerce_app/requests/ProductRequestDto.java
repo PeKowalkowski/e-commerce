@@ -1,35 +1,24 @@
-package com.eCommerce.ecommerce_app.entities;
+package com.eCommerce.ecommerce_app.requests;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "products")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Product {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class ProductRequestDto {
 
+    @NotBlank(message = "Product name is required")
     private String name;
 
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
 
+    @NotNull(message = "VAT is required")
     private BigDecimal vat;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;
@@ -55,5 +44,3 @@ public class Product {
         this.vat = vat;
     }
 }
-
-
