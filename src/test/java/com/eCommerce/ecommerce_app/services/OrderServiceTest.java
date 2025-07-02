@@ -1,12 +1,15 @@
 package com.eCommerce.ecommerce_app.services;
 
 import com.eCommerce.ecommerce_app.entities.Order;
+import com.eCommerce.ecommerce_app.entities.OrderItem;
 import com.eCommerce.ecommerce_app.entities.Product;
 import com.eCommerce.ecommerce_app.entities.User;
 import com.eCommerce.ecommerce_app.exceptions.InsufficientStockException;
+import com.eCommerce.ecommerce_app.exceptions.OrderNotFoundException;
 import com.eCommerce.ecommerce_app.exceptions.ProductNotFoundException;
 import com.eCommerce.ecommerce_app.requests.OrderItemRequestDto;
 import com.eCommerce.ecommerce_app.requests.PlaceOrderRequestDto;
+import com.eCommerce.ecommerce_app.responses.OrderDetailsResponseDto;
 import com.eCommerce.ecommerce_app.responses.PlaceOrderResponseDto;
 import com.eCommerce.ecommerce_app.respositories.OrderRepository;
 import com.eCommerce.ecommerce_app.respositories.ProductRepository;
@@ -38,14 +41,41 @@ class OrderServiceTest {
     private OrderService orderService;
 
     private User user;
+    private Order sampleOrder;
 
     @BeforeEach
     void setUp() {
-        user = new User();
+        User user = new User();
         user.setId(1L);
         user.setUsername("testuser");
-    }
+        user.setEmail("test@example.com");
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setPhoneNumber("123456789");
+        user.setCountry("Poland");
+        user.setCity("Warsaw");
+        user.setStreet("Main St 1");
+        user.setPostalCode("00-001");
 
+        Product product = new Product();
+        product.setId(10L);
+        product.setName("Test Product");
+
+        OrderItem item = new OrderItem();
+        item.setId(100L);
+        item.setProduct(product);
+        item.setQuantity(2);
+        item.setNetPrice(BigDecimal.valueOf(50));
+        item.setGrossPrice(BigDecimal.valueOf(61.5));
+
+        sampleOrder = new Order();
+        sampleOrder.setId(5L);
+        sampleOrder.setUser(user);
+        sampleOrder.setOrderItems(List.of(item));
+        sampleOrder.setTotalNetValue(BigDecimal.valueOf(100));
+        sampleOrder.setTotalGrossValue(BigDecimal.valueOf(123));
+    }
+    //Place order
     @Test
     void placeOrder_ShouldPlaceOrderWithSingleProductSuccessfully() {
         // given
@@ -240,5 +270,57 @@ class OrderServiceTest {
         verify(productRepository).findById(1L);
         verify(productRepository).save(any());
         verify(orderRepository, never()).save(any());
+    }
+    //Get order
+    @Test
+    void getOrderDetails_ShouldReturnDto_WhenOrderExists() {
+        when(orderRepository.findById(5L)).thenReturn(Optional.of(sampleOrder));
+
+        OrderDetailsResponseDto dto = orderService.getOrderDetails(5L);
+
+        assertNotNull(dto);
+        assertEquals(sampleOrder.getId(), dto.getOrderId());
+        assertNotNull(dto.getCustomer());
+        assertEquals(sampleOrder.getUser().getId(), dto.getCustomer().getId());
+        assertEquals(sampleOrder.getUser().getUsername(), dto.getCustomer().getUsername());
+
+        assertNotNull(dto.getItems());
+        assertEquals(1, dto.getItems().size());
+
+        OrderDetailsResponseDto.OrderItemInfoDto itemDto = dto.getItems().get(0);
+        assertEquals(10L, itemDto.getProductId());
+        assertEquals("Test Product", itemDto.getProductName());
+        assertEquals(2, itemDto.getQuantity());
+        assertEquals(0, BigDecimal.valueOf(50).compareTo(itemDto.getNetPrice()));
+        assertEquals(0, BigDecimal.valueOf(61.5).compareTo(itemDto.getGrossPrice()));
+
+        assertEquals(0, sampleOrder.getTotalNetValue().compareTo(dto.getTotalNet()));
+        assertEquals(0, sampleOrder.getTotalGrossValue().compareTo(dto.getTotalGross()));
+
+        verify(orderRepository).findById(5L);
+    }
+
+    @Test
+    void getOrderDetails_ShouldThrowOrderNotFoundException_WhenOrderDoesNotExist() {
+        when(orderRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        OrderNotFoundException ex = assertThrows(OrderNotFoundException.class,
+                () -> orderService.getOrderDetails(999L));
+
+        assertEquals("Order with id 999 not found", ex.getMessage());
+
+        verify(orderRepository).findById(999L);
+    }
+
+    @Test
+    void getOrderDetails_ShouldThrowRuntimeException_WhenUnexpectedErrorOccurs() {
+        when(orderRepository.findById(anyLong())).thenThrow(new RuntimeException("DB error"));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> orderService.getOrderDetails(5L));
+
+        assertEquals("An error occurred while fetching order details.", ex.getMessage());
+
+        verify(orderRepository).findById(5L);
     }
 }
