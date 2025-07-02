@@ -62,6 +62,7 @@ public class ProductController {
         response.setName(product.getName());
         response.setPrice(product.getPrice());
         response.setVat(product.getVat());
+        response.setQuantity(product.getQuantity());
         response.setMessage("Product added successfully");
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
