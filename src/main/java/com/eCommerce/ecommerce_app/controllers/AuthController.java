@@ -63,9 +63,19 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
-        authService.logout(token);
-        return ResponseEntity.ok("Logged out successfully");
-    }
+   @DeleteMapping("/logout")
+   public ResponseEntity<String> logout(@RequestHeader(value = "Authorization", required = false) String token) {
+       if (token == null || token.isEmpty()) {
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                   .body("Unauthorized: token is missing or invalid");
+       }
+
+       User user = authService.getUserByToken(token);
+       if (user == null) {
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                   .body("Unauthorized: token is missing or invalid");
+       }
+       authService.logout(token);
+       return ResponseEntity.ok("Logout successful");
+   }
 }

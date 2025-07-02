@@ -3,7 +3,9 @@ package com.eCommerce.ecommerce_app.controllers;
 import com.eCommerce.ecommerce_app.entities.User;
 import com.eCommerce.ecommerce_app.enums.Role;
 import com.eCommerce.ecommerce_app.exceptions.UserAlreadyExistException;
+import com.eCommerce.ecommerce_app.requests.LoginRequestDto;
 import com.eCommerce.ecommerce_app.requests.RegistrationRequestDto;
+import com.eCommerce.ecommerce_app.responses.LoginResponseDto;
 import com.eCommerce.ecommerce_app.responses.RegistrationResponseDto;
 import com.eCommerce.ecommerce_app.services.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,16 +14,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
 import java.util.List;
 
-import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
 
 
 @ExtendWith(MockitoExtension.class)
@@ -38,6 +39,12 @@ class AuthControllerTest {
 
     private RegistrationRequestDto validDto;
     private User user;
+
+    private LoginRequestDto validLoginDto;
+    private LoginRequestDto invalidLoginDto;
+
+    private LoginResponseDto successLoginResponse;
+    private LoginResponseDto failureLoginResponse;
 
     @BeforeEach
     void setUp() {
@@ -60,8 +67,20 @@ class AuthControllerTest {
         user.setLastName(validDto.getLastName());
         user.setUsername(validDto.getUsername());
         user.getRoles().add(Role.USER);
+
+        validLoginDto = new LoginRequestDto();
+        validLoginDto.setUsername("jkowalski");
+        validLoginDto.setPassword("password123");
+
+        invalidLoginDto = new LoginRequestDto();
+        invalidLoginDto.setUsername("jkowalski");
+        invalidLoginDto.setPassword("wrongPassword");
+
+        successLoginResponse = new LoginResponseDto("valid-token-123", "Login successful");
+        failureLoginResponse = new LoginResponseDto(null, "Invalid username or password");
     }
 
+    //Registration
     @Test
     void register_ShouldReturnCreated_WhenValidInput() {
         // given
@@ -134,6 +153,7 @@ class AuthControllerTest {
         verify(authService).registerUser(validDto);
         verify(bindingResult).hasErrors();
     }
+
     @Test
     void register_ShouldReturnAllValidationErrors_WhenMultipleFieldsInvalid() {
         when(bindingResult.hasErrors()).thenReturn(true);
@@ -152,6 +172,7 @@ class AuthControllerTest {
 
         verify(authService, never()).registerUser(any());
     }
+
     @Test
     void register_ShouldReturnBadRequest_WhenRequestBodyIsNull() {
         when(bindingResult.hasErrors()).thenReturn(true);
@@ -167,6 +188,7 @@ class AuthControllerTest {
 
         verify(authService, never()).registerUser(any());
     }
+
     @Test
     void register_ShouldReturnError_WhenEmailInvalid() {
         validDto.setEmail("invalidEmailWithoutAt");
@@ -196,6 +218,7 @@ class AuthControllerTest {
         assertTrue(response.getBody().getErrors().contains("Phone number is invalid"));
         verify(authService, never()).registerUser(any());
     }
+
     @Test
     void register_ShouldReturnError_WhenUsernameTooLong() {
         validDto.setUsername("thisusernameisdefinitelywaytoolong");
@@ -210,6 +233,7 @@ class AuthControllerTest {
         assertTrue(response.getBody().getErrors().contains("Username must be at most 20 characters"));
         verify(authService, never()).registerUser(any());
     }
+
     @Test
     void register_ShouldAllowOptionalFieldsToBeNull() {
         validDto.setPhoneNumber(null);
@@ -227,5 +251,77 @@ class AuthControllerTest {
         assertEquals(201, response.getStatusCodeValue());
         assertEquals("Registration successful", response.getBody().getMessage());
         verify(authService).registerUser(validDto);
+    }
+
+    //Login
+    @Test
+    void login_ShouldReturn200AndToken_WhenCredentialsAreValid() {
+        when(authService.login(validLoginDto)).thenReturn(successLoginResponse);
+
+        ResponseEntity<LoginResponseDto> response = authController.login(validLoginDto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("valid-token-123", response.getBody().getToken());
+        assertEquals("Login successful", response.getBody().getMessage());
+
+        verify(authService).login(validLoginDto);
+    }
+
+    @Test
+    void login_ShouldReturn401_WhenCredentialsAreInvalid() {
+        when(authService.login(invalidLoginDto)).thenReturn(failureLoginResponse);
+
+        ResponseEntity<LoginResponseDto> response = authController.login(invalidLoginDto);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertNull(response.getBody().getToken());
+        assertEquals("Invalid username or password", response.getBody().getMessage());
+
+        verify(authService).login(invalidLoginDto);
+    }
+
+    //Logout
+    @Test
+    void logout_ShouldReturn200_WhenTokenIsValid() {
+        String token = "valid-token";
+        User user = new User();
+
+        when(authService.getUserByToken(token)).thenReturn(user);
+        doNothing().when(authService).logout(token);
+
+        ResponseEntity<String> response = authController.logout(token);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Logout successful", response.getBody());
+
+
+        verify(authService).getUserByToken(token);
+        verify(authService).logout(token);
+    }
+    @Test
+    void logout_ShouldReturn401_WhenTokenIsMissing() {
+        ResponseEntity<String> response = authController.logout(null);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Unauthorized: token is missing or invalid", response.getBody());
+
+        verify(authService, never()).getUserByToken(any());
+        verify(authService, never()).logout(any());
+    }
+    @Test
+    void logout_ShouldReturn401_WhenTokenIsInvalid() {
+        String token = "invalid-token";
+
+        when(authService.getUserByToken(token)).thenReturn(null);
+
+        ResponseEntity<String> response = authController.logout(token);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Unauthorized: token is missing or invalid", response.getBody());
+
+        verify(authService).getUserByToken(token);
+        verify(authService, never()).logout(any());
     }
 }
