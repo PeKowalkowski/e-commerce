@@ -31,7 +31,7 @@ public class ProductController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<ProductResponseDto> addProduct(@RequestHeader("Authorization") String token,
                                                          @Valid @RequestBody ProductRequestDto dto,
                                                          BindingResult bindingResult) {

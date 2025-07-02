@@ -31,4 +31,52 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public BigDecimal getTotalNetValue() {
+        return totalNetValue;
+    }
+
+    public void setTotalNetValue(BigDecimal totalNetValue) {
+        this.totalNetValue = totalNetValue;
+    }
+
+    public BigDecimal getTotalGrossValue() {
+        return totalGrossValue;
+    }
+
+    public void setTotalGrossValue(BigDecimal totalGrossValue) {
+        this.totalGrossValue = totalGrossValue;
+    }
+
+    public List<OrderItem> getOrderItems() {
+        return orderItems;
+    }
+
+    public void setOrderItems(List<OrderItem> orderItems) {
+        this.orderItems = orderItems;
+    }
 }

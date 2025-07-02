@@ -34,6 +34,8 @@ public class ProductService {
             product.setName(dto.getName());
             product.setPrice(dto.getPrice());
             product.setVat(dto.getVat());
+            product.setQuantity(dto.getQuantity());
+
 
             BigDecimal vatFraction = product.getVat().divide(BigDecimal.valueOf(100));
             BigDecimal priceGross = product.getPrice().add(product.getPrice().multiply(vatFraction));

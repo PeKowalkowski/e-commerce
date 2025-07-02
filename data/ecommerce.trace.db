@@ -1,0 +1,8 @@
+2025-07-02 16:49:12.318145+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Błąd składniowy w wyrażeniu SQL "[*]SELECTORDERS  * FROM ORDER_ITEMS"; oczekiwano "SAVEPOINT, SCRIPT, SHUTDOWN"
+Syntax error in SQL statement "[*]SELECTORDERS  * FROM ORDER_ITEMS"; expected "SAVEPOINT, SCRIPT, SHUTDOWN"; SQL statement:
+SELECTORDERS  * FROM ORDER_ITEMS [42001-232]
+2025-07-02 16:56:45.652561+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Tabela "USEPRODUCTS" nie istnieje
+Table "USEPRODUCTS" not found; SQL statement:
+SELECT * FROM USEPRODUCTS RS [42102-232]
